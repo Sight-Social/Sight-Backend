@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     //3. Check if valid password
     const validPassword = await checkPassword(req.body.password, foundUser.password);
     if (!validPassword) {
-      return res.status(400).send('Invalid password');
+      return res.status(401).send('Invalid password');
     }
 
     //3. Return the authenticated user with populated fields

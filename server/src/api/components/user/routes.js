@@ -13,6 +13,31 @@ router.use('/:username/focalpoints/:focalpoint_id', insightRouter);
 // when we are editing a focal point
 router.use('/:username/focalpoints', focalpointRouter);
 
+router.put('/:username/update', async (req, res) => {
+  console.log('----------------------------------------');
+  console.log('Got a PUT request at /user/:username/update');
+  console.log('req.body.username:', req.body.username);
+  console.log('req.params.username:', req.params.username);
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $set: { username: req.body.username } },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    else {
+      user.isAuthenticated = true;
+      console.log('updated user:', user)
+      res.status(200).send(user);
+    }
+  } catch (error) {
+    res.status(500).send(`Error updating user: ${error}`);
+  }
+});
+
 router.get('/:email', async (req, res) => {
   console.log('----------------------------------------');
   console.log('Got a GET request at /user/:email');
@@ -29,12 +54,12 @@ router.get('/:email', async (req, res) => {
   }
 });
 
-router.put('/:email', async (req, res) => {
+router.put('/:username', async (req, res) => {
   console.log('----------------------------------------');
-  console.log('Got a PUT request at /user/:email');
+  console.log('Got a PUT request at /user/:username');
   try {
     const user = await User.findOneAndUpdate(
-      {email: req.params.email },
+      { username: req.params.username },
       { $set: { username: req.body.username } },
       { new: true }
     );
