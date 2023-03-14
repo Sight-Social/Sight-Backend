@@ -7,39 +7,55 @@ const { ObjectId } = require('mongodb');
 /* ADD AN INSIGHT */
 router.post('/', async (req, res) => {
   console.log('----------------------------------------');
-  console.log('[POST] Got a request at /:focalpointID/');
+  console.log('[POST] Got a request at /user/focalpoints/:focalpointId/');
   console.log('req.body=', req.body);
   try {
-    /* Find a user and add a focal point with their _id as the author or that focal point */
+    //1. Find the user in the database
     const user = await User.findOne({ username: req.body.username });
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
     }
+    //2. Find the insight in the Creator's insights array using the insightId
+
+    const focalpointId = req.body.focalpointId;
+    const insight = req.body.insight;
+    console.log('focalpointId=', focalpointId);
+    console.log('insight=', insight);
 
     const newInsight = {
-      video_id: req.body.videoId,
-      video_format: req.body.videoFormat || 'YouTube',
-      tags: req.body.tags || [],
+      video_id: insight.videoId,
+      video_format: insight.videoFormat || 'YouTube',
+      tags: insight.tags || [],
       source: 'YouTube'
     };
-    const focalpointId = new ObjectId(req.body.focalpoint_id);
-    const focalpointIndex = user.focalpoints.findIndex(
-      (focalpoint) => focalpoint._id.equals(focalpointId)
-    );
-
+    
+    // Find the index of the focalpoint in the user's focalpoints array
+    const focalpointIndex = user.focalpoints.findIndex(fp => fp._id.toString() === focalpointId);
     if (focalpointIndex === -1) {
-      console.log('Focal point not found')
-      return res.status(404).json({ error: 'Focal point not found' });
+      console.log('Focalpoint not found');
+      return res.status(404).json({ error: 'Focalpoint not found' });
     }
-
+    console.log('focalpoint found at index: ', focalpointIndex);
+    
+    // Update the focalpoint's insights array with the new insight
     user.focalpoints[focalpointIndex].insights.push(newInsight);
+    console.log('found focalpoint and added insight')
+    
+    
+    
+    // Save the updated user document and return the new insight
     await user.save();
-    return res.status(201).json(newInsight);
-  } catch (err) {
-    console.error(err);
+    console.log('saved user document')
+    console.log('returning new insight: ', newInsight)
+    
+    //Return the new insight
+    return res.json(newInsight);
+  } catch (error) {
+    console.error(error);
     return res.status(500).json({ error: 'Server error' });
   }
+  
 
   /* Find a user and add a focal point with their _id as the author or that focal point */
   /*console.log('User: ', req.body.username);
