@@ -25,17 +25,24 @@ passport.use(new GoogleStrategy({
   console.log('accessToken', accessToken)
   console.log('refreshToken', refreshToken)
   try {
-    let user = await User.findOneAndUpdate({ email: profile.email }, {
-      googleId: profile.id,
-      avatar: profile.picture,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-    }, { new: true });
+    let user = await User.findOneAndUpdate(
+      { email: profile.email },
+      {
+        $set: {
+          avatar: profile.picture,
+          "tokens.0.googleId": profile.id,
+          "tokens.0.googleAccessToken": accessToken,
+          "tokens.0.googleRefreshToken": refreshToken,
+        },
+      },
+      { new: true }
+    );
     // if user is not found, redirect them to the signup page
     if (!user) {
     console.log('user not found, they need to sign up an account with us first...');
     res.redirect('http://localhost:3001/signup');
     }
+    console.log('Step 1: Google USER: ', user);
     req.user = user;
     done(null, user);   // pass the user to the next function
   } 
@@ -49,7 +56,6 @@ passport.serializeUser(function (user, cb) {
     cb(null, { id: user.id, username: user.username });
   });
 });
-
 passport.deserializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, user);
@@ -67,9 +73,10 @@ router.get('/callback',
   async function(req, res) {
     try {
       //Get the user's subscriptions from YouTube
-      const subscriptions = await getYouTubeSubscriptionList(req.user.accessToken);
+      const subscriptions = await getYouTubeSubscriptionList(req.user.tokens[0].googleAccessToken);
       //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
-      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.accessToken);
+      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens[0].googleAccessToken);
+      console.log('#ofNewCreatorsAdded', newCreatorsAdded);
       //Populate the user's subscriptions with the creator insights
       const updatedUser = await addCreatorInsightsToUserSubscriptions(req.user, subscriptions);
 
@@ -86,6 +93,7 @@ router.get('/callback',
 });
 
 async function getYouTubeSubscriptionList(accessToken){
+  console.log('getSubsList accessToken', accessToken)
   //1. Create new GoogleOAuth2 client using the user's accessToken
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
@@ -114,9 +122,10 @@ async function saveUserYouTubeSubscriptions(user, subscriptions) {
       // Create a new subscription object
       const newSubscription = {
         channelId: subscription.snippet.channelId,       //YouTube's channel ID
-        title: subscription.snippet.title,                          //channel name
-        description: subscription.snippet.description.slice(0, 100), // Only take the first 100 characters
-        kind: subscription.kind.replace('#subscription', '')  // 'youtube#subscription' -> just 'youtube'
+        channelName: subscription.snippet.title,                          //channel name
+        channelDescription: subscription.snippet.description.slice(0, 100), // Only take the first 100 characters
+        channelAvatar: subscription.snippet.thumbnails.default.url,        // channel avatar
+        insights: [],                                                     // insights array
       };
       const newCreatorInsights = await getCreatorInsightsFromYouTube(subscription.snippet.channelId, user.accessToken);  //returns an array of Insight objects
       // Add the new insights to the subscription object
@@ -147,10 +156,11 @@ async function addSubscriptionsToCreatorsCollection(subscriptions, accessToken){
         channelName: subscription.snippet.title,
         channelDescription: subscription.snippet.description,
         channelAvatar: subscription.snippet.thumbnails.default.url,
+        lastUpdated: Date.now(),
         insights: newCreatorInsights,
       });
-      newCreatorChannelIds.push(subscription.snippet.resourceId.channelId);
     await newCreator.save();
+    count++;
     }
   }
   return count;
@@ -167,6 +177,7 @@ async function addCreatorInsightsToUserSubscriptions(user, subscriptions){
         channelId: foundCreator.channelId,
         channelName: foundCreator.channelName,
         channelDescription: foundCreator.channelDescription,
+        channelAvatar: foundCreator.channelAvatar,
         insights: foundCreator.insights,
         })
     }
@@ -177,6 +188,8 @@ async function addCreatorInsightsToUserSubscriptions(user, subscriptions){
 }
 
 async function getCreatorInsightsFromYouTube(channelId, accessToken){
+  console.log('Creator Insights accessToken', accessToken)
+  console.log('Creator Insights channelId', channelId)
   //1. Create new GoogleOAuth2 client
   const auth = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -188,7 +201,7 @@ async function getCreatorInsightsFromYouTube(channelId, accessToken){
   auth.setCredentials({ access_token: accessToken });
   //2. Create a YouTube API client
   const youtube = google.youtube({ version: 'v3', auth: auth });
-  //3. Get the Creator's 10 most recent videos
+  //3. Get the Creator's 50 most recent videos
   const response = await youtube.search.list({
     part: "snippet",
     channelId: channelId,
@@ -204,12 +217,13 @@ async function getCreatorInsightsFromYouTube(channelId, accessToken){
     else {
     let video = {
         videoId: item.id.videoId,
-        kind: item.id.kind.replace('#video', ''),
         title: item.snippet.title,
         description: item.snippet.description.slice(0, 100),
-        thumbnail: item.snippet.thumbnails.medium.url,
         publishedAt: item.snippet.publishedAt,
-        viewCount: 0
+        thumbnail: item.snippet.thumbnails.medium.url,
+        source: 'YouTube',
+        mediaType: 'video',
+        tags: item.snippet.tags,
         };
       videos.push(video);
     }

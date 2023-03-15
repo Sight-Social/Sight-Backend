@@ -16,21 +16,13 @@ router.post('/', async (req, res) => {
       console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
     }
-    //2. Find the insight in the Creator's insights array using the insightId
-
     const focalpointId = req.body.focalpointId;
     const insight = req.body.insight;
     console.log('focalpointId=', focalpointId);
     console.log('insight=', insight);
 
-    const newInsight = {
-      video_id: insight.videoId,
-      video_format: insight.videoFormat || 'YouTube',
-      tags: insight.tags || [],
-      source: 'YouTube'
-    };
     
-    // Find the index of the focalpoint in the user's focalpoints array
+    //2. Find the index of the focalpoint in the user's focalpoints array
     const focalpointIndex = user.focalpoints.findIndex(fp => fp._id.toString() === focalpointId);
     if (focalpointIndex === -1) {
       console.log('Focalpoint not found');
@@ -38,19 +30,17 @@ router.post('/', async (req, res) => {
     }
     console.log('focalpoint found at index: ', focalpointIndex);
     
-    // Update the focalpoint's insights array with the new insight
-    user.focalpoints[focalpointIndex].insights.push(newInsight);
+    //3. Update the User's specific focalpoint's insights array with the new insight
+    user.focalpoints[focalpointIndex].insights.push(insight);
     console.log('found focalpoint and added insight')
     
-    
-    
-    // Save the updated user document and return the new insight
+    //4. Save the updated user document and return the new insight
     await user.save();
     console.log('saved user document')
-    console.log('returning new insight: ', newInsight)
+    console.log('returning new insight: ', insight)
     
-    //Return the new insight
-    return res.json(newInsight);
+    //5. Return the new insight
+    return res.json(insight);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Server error' });

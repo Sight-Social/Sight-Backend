@@ -16,17 +16,22 @@ const CreatorSchema = new Schema({
   channelAvatar: {
     type: String,
   },
+  lastUpdated: {
+    type: Date,
+    default: Date.now,
+  },
   insights: [
     {
       videoId: String,
       title: String,
       description: String,
-      publishedAt: String,
-      kind: String,
+      publishedAt: Date,
       thumbnail: String,
-      viewCount: String
+      source: String,
+      mediaType: String,
+      tags: [String],
     },
-  ],
+  ]
 });
 
 module.exports = Creator = mongoose.model('Creator', CreatorSchema);

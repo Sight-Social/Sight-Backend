@@ -16,32 +16,19 @@ const UserSchema = new Schema({
     type: String,
     required: true,
   },
-  focalpoints: [
-    {
-      title: String,
-      description: String,
-      insights: [
-        {
-          video_id: String,
-          video_format: String,
-          tags: [String],
-          source: String,
-        },
-      ],
-    },
-  ],
-  pinned_insights: [
-    {
-      channelId: String,
-      title: String,
-      description: String,
-      kind: String
-    },
-  ],
-  googleId: String,
   avatar: String,
-  accessToken: String,
-  refreshToken: String,
+  tokens: [
+    {
+      googleId: String,
+      googleAccessToken: String,
+      googleRefreshToken: String,
+    },
+    {
+      spotifyId: String,
+      spotifyAccessToken: String,
+      spotifyRefreshToken: String,
+    }
+  ],
   subscriptions: [
     {
       channelId: String,
@@ -53,14 +40,51 @@ const UserSchema = new Schema({
           videoId: String,
           title: String,
           description: String,
-          publishedAt: String,
-          kind: String,
+          publishedAt: Date,
           thumbnail: String,
-          viewCount: String
+          source: String,
+          mediaType: String,
+          tags: [String],
         },
       ]
     },
   ],
+  focalpoints: [
+    {
+      title: String,
+      description: String,
+      filters: [String],
+      insights: [
+        {
+          videoId: String,
+          title: String,
+          description: String,
+          publishedAt: Date,
+          thumbnail: String,
+          source: String,
+          mediaType: String,
+          tags: [String],
+        },
+      ]
+    },
+  ],
+  pinnedInsights: [
+    {
+      videoId: String,
+      title: String,
+      description: String,
+      publishedAt: Date,
+      thumbnail: String,
+      source: String,
+      mediaType: String,
+      tags: [String],
+    },
+  ],
+  filters: {
+    subscriptions: [String],
+    source: [String],
+    mediaType: [String],
+  }
 });
 
 module.exports = User = mongoose.model('User', UserSchema);

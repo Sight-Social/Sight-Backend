@@ -6,7 +6,7 @@ const db = require('../db.js');
 const bcrypt = require('bcrypt');
 
 router.post('/:username', async (req, res) => {
-  console.log('Got a GET request at /signup/:username');
+  console.log('Got a POST request at /signup/:username');
   console.log('req.params: ', req.params);
 });
 
@@ -31,27 +31,30 @@ router.post('/', async (req, res) => {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const savedUser = await User.create({
         username: req.body.username,
-        password: hashedPassword,
         email: req.body.email,
-        googleId: '',
-        avater: '',
+        password: hashedPassword,
+        avatar: '',
+        tokens: [],
+        subscriptions: [],
         focalpoints: [
           {
             title: 'Focalpoint 1',
             description: 'This is a default focalpoint, delete it and add your own!',
             insights: [],
+            filters: [],
           },
           {
             title: 'Focalpoint 2',
             description: 'This is a default focalpoint, delete it and add your own!',
             insights: [],
+            filters: [],
           }
         ],
         pinned_insights: [],
-        subscriptions: []
+        filters: [],
     });
     //3. Send back the newly created user
-    const userToSend = { ...savedUser.toObject(), isAuthenticated: true};
+    const userToSend = { ...savedUser.toObject() };
     console.log('userToSend: ', userToSend);
     res.send(userToSend);
   } catch (error) {

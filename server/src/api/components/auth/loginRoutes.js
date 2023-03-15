@@ -31,13 +31,22 @@ router.post('/', async (req, res) => {
     //1. Find the user by username or email, check if the password is valid
     const foundUser = await fetchUser(req.body.username, req.body.password);
 
-    //2. Edge case: Check if the focalpoints or pinned_insights fields are empty
-    /*if (foundUser.focalpoints === undefined || foundUser.pinned_insights === undefined) {
+
+    //A: 
+
+
+
+
+
+
+
+    //2. Edge case: Check if the focalpoints or pinnedInsights fields are empty
+    /*if (foundUser.focalpoints === undefined || foundUser.pinnedInsights === undefined) {
       const user = {
         username: foundUser.username,
         email: foundUser.email,
         focalpoints: foundUser.focalpoints,
-        pinned_insights: foundUser.pinned_insights,
+        pinnedInsights: foundUser.pinnedInsights,
         isAuthenticated: true,
       }
       return res.status(200).json({ user });
@@ -52,11 +61,13 @@ router.post('/', async (req, res) => {
     const user = {
       username: foundUser.username,
       email: foundUser.email,
-      focalpoints: foundUser.focalpoints,
-      pinned_insights: foundUser.pinned_insights,
       avatar: foundUser.avatar,
-      subscriptions: foundUser.subscriptions,
+      tokens: foundUser.tokens,
       isAuthenticated: true,
+      subscriptions: foundUser.subscriptions,
+      focalpoints: foundUser.focalpoints,
+      pinnedInsights: foundUser.pinnedInsights,
+      filters: foundUser.filters,
     }
     return res.status(200).json({ user });
   } catch (error) {
