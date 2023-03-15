@@ -38,6 +38,7 @@ const UserSchema = new Schema({
       insights: [
         {
           videoId: String,
+          channelId: String,
           title: String,
           description: String,
           publishedAt: Date,
@@ -71,6 +72,7 @@ const UserSchema = new Schema({
   pinnedInsights: [
     {
       videoId: String,
+      channelId: String,
       title: String,
       description: String,
       publishedAt: Date,

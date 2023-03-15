@@ -23,6 +23,7 @@ const CreatorSchema = new Schema({
   insights: [
     {
       videoId: String,
+      channelId: String,
       title: String,
       description: String,
       publishedAt: Date,

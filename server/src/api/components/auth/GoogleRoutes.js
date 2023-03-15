@@ -217,6 +217,7 @@ async function getCreatorInsightsFromYouTube(channelId, accessToken){
     else {
     let video = {
         videoId: item.id.videoId,
+        channelId: item.snippet.channelId,
         title: item.snippet.title,
         description: item.snippet.description.slice(0, 100),
         publishedAt: item.snippet.publishedAt,
