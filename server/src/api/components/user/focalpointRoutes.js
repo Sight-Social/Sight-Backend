@@ -86,9 +86,7 @@ router.patch('/', async (req, res) => {
     await user.save();
     console.log('updatedUser:', user);
 
-    return res
-      .status(200)
-      .send({ message: 'Focal point updated successfully' });
+    return res.status(200).send(user);
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: 'Internal Server Error' });
