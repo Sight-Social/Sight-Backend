@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const loginRoutes = require('./auth/loginRoutes');
 const signupRoutes = require('./auth/signupRoutes');
 const googleRoutes = require('./auth/GoogleRoutes');
+const spotifyRoutes = require('./auth/SpotifyRoutes');
 const userRoutes = require('./user/routes');
 const session = require('express-session');
 
@@ -26,7 +27,7 @@ app.use('/login', loginRoutes);
 app.use('/signup', signupRoutes);
 app.use('/user', userRoutes);
 app.use('/auth/google', googleRoutes);
-
+app.use('/auth/spotify', spotifyRoutes);
 //Start the server
 const port = 3000;
 app.listen(port, () => {

@@ -30,12 +30,12 @@ router.post('/', async (req, res) => {
   //2. If user doesn't exist, create a new User
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const savedUser = await User.create({
+    const newUser = await User.create({
         username: req.body.username,
         email: req.body.email,
         password: hashedPassword,
         avatar: '',
-        tokens: [],
+        tokens: {},
         subscriptions: [],
         focalpoints: [
           {
@@ -55,12 +55,16 @@ router.post('/', async (req, res) => {
         filters: [],
     });
     //3. Create a JWT token
-    const sightToken = jwt.sign({ _id: savedUser._id }, process.env.SIGHT_TOKEN_SECRET);
-    savedUser.tokens = savedUser.tokens.unshift({ sightToken });
-    //4. Send back the newly created user
-    const userToSend = { ...savedUser.toObject() };
-    console.log('userToSend: ', userToSend);
-    res.send(userToSend);
+    const sightToken = jwt.sign({ _id: newUser._id.toString() }, process.env.SIGHT_SECRET);
+    console.log('sightToken: ', sightToken)
+    //4. Add the JWT token to the user's tokens object
+    newUser.tokens.sightToken = sightToken;
+    console.log('newUser: ', newUser)
+    //5. Save the user to the database
+    const savedUser = await newUser.save();
+    //6. Send back the newly created&saved user
+    console.log('userToSend: ', savedUser);
+    res.send(savedUser);
   } catch (error) {
     res.status(500).send(`Error posting or fetching newly created user from the database: ${error}`);
   }

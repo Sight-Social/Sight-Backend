@@ -17,26 +17,18 @@ const UserSchema = new Schema({
     required: true,
   },
   avatar: String,
-  tokens: [
-    {
+  tokens: {
       sightToken: String,
-    },
-    {
       googleId: String,
       googleAccessToken: String,
       googleRefreshToken: String,
-    },
-    {
       spotifyId: String,
       spotifyAccessToken: String,
       spotifyRefreshToken: String,
-    },
-    {
       instagramId: String,
       instagramAccessToken: String,
       instagramRefreshToken: String,
     },
-  ],
   subscriptions: [
     {
       channelId: String,

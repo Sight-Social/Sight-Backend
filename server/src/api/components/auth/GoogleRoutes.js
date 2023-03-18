@@ -14,42 +14,35 @@ const jwtDecode = require('jwt-decode');
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: process.env.GOOGLE_REDIRECT_URI,    // this must match the route in the Google developer console
-  passReqToCallback: true,                                // allows us to pass back the entire request to the callback fxn below    
+  callbackURL: process.env.GOOGLE_REDIRECT_URI,
+  passReqToCallback: true,
   scope: ['profile', 'email', 'https://www.googleapis.com/auth/youtube',
-   'https://www.googleapis.com/auth/youtube.readonly',
-   'https://www.googleapis.com/auth/youtube.force-ssl'],
-  access_type: 'offline'       
-}, async function(req, accessToken, refreshToken, profile, done) {
-  console.log('profile', profile._json)
-  console.log('accessToken', accessToken)
-  console.log('refreshToken', refreshToken)
+    'https://www.googleapis.com/auth/youtube.readonly',
+    'https://www.googleapis.com/auth/youtube.force-ssl'],
+  access_type: 'offline'
+},  async function(req, accessToken, refreshToken, profile, done) {
+  console.log('profile', profile._json);
+  console.log('accessToken', accessToken);
+  console.log('refreshToken', refreshToken);
+
   try {
     let user = await User.findOneAndUpdate(
       { email: profile.email },
       {
-        $set: {
-          avatar: profile.picture,
-          "tokens.1.googleId": profile.id,
-          "tokens.1.googleAccessToken": accessToken,
-          "tokens.1.googleRefreshToken": refreshToken,
-        },
+          avatar: profile._json.picture,
+          'tokens.googleId': profile.id,
+          'tokens.googleAccessToken': accessToken,
+          'tokens.googleRefreshToken': refreshToken
       },
-      { new: true }
-    );
-    // if user is not found, redirect them to the signup page
-    if (!user) {
-    console.log('user not found, they need to sign up an account with us first...');
-    res.redirect('http://localhost:3001/signup');
-    }
+      { new: true,
+        upsert: true, }
+    );  
     console.log('Step 1: Google USER: ', user);
-    req.user = user;
-    done(null, user);   // pass the user to the next function
-  } 
-  catch (error) {
-    console.log(error);
+    done(null, user);
+  } catch (err) {
+    return done(err);
   }
-}));
+}));  
 
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
@@ -72,10 +65,11 @@ router.get('/callback',
   passport.authenticate('google', { failureRedirect: '/signup' }),
   async function(req, res) {
     try {
+      console.log('/callback req.user', req.user.tokens);
       //Get the user's subscriptions from YouTube
-      const subscriptions = await getYouTubeSubscriptionList(req.user.tokens[0].googleAccessToken);
+      const subscriptions = await getYouTubeSubscriptionList(req.user.tokens.googleAccessToken);
       //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
-      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens[0].googleAccessToken);
+      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens.googleAccessToken);
       console.log('#ofNewCreatorsAdded', newCreatorsAdded);
       //Populate the user's subscriptions with the creator insights
       const updatedUser = await addCreatorInsightsToUserSubscriptions(req.user, subscriptions);
@@ -83,8 +77,8 @@ router.get('/callback',
       //Check console to see if it all worked
       console.log('updatedUser', updatedUser);
 
-      //Redirect to homepage
-      res.redirect('http://localhost:3001/login');
+      //Redirect to spotify registration page
+      res.redirect('http://localhost:3001/register/spotify');
 
     } catch (error) {
       console.log(error);
