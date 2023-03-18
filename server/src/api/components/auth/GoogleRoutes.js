@@ -30,9 +30,9 @@ passport.use(new GoogleStrategy({
       {
         $set: {
           avatar: profile.picture,
-          "tokens.0.googleId": profile.id,
-          "tokens.0.googleAccessToken": accessToken,
-          "tokens.0.googleRefreshToken": refreshToken,
+          "tokens.1.googleId": profile.id,
+          "tokens.1.googleAccessToken": accessToken,
+          "tokens.1.googleRefreshToken": refreshToken,
         },
       },
       { new: true }
@@ -84,7 +84,7 @@ router.get('/callback',
       console.log('updatedUser', updatedUser);
 
       //Redirect to homepage
-      res.redirect('http://localhost:3001/');
+      res.redirect('http://localhost:3001/login');
 
     } catch (error) {
       console.log(error);

@@ -30,7 +30,12 @@ const UserSchema = new Schema({
       spotifyId: String,
       spotifyAccessToken: String,
       spotifyRefreshToken: String,
-    }
+    },
+    {
+      instagramId: String,
+      instagramAccessToken: String,
+      instagramRefreshToken: String,
+    },
   ],
   subscriptions: [
     {
