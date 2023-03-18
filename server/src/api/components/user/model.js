@@ -18,17 +18,17 @@ const UserSchema = new Schema({
   },
   avatar: String,
   tokens: {
-      sightToken: String,
-      googleId: String,
-      googleAccessToken: String,
-      googleRefreshToken: String,
-      spotifyId: String,
-      spotifyAccessToken: String,
-      spotifyRefreshToken: String,
-      instagramId: String,
-      instagramAccessToken: String,
-      instagramRefreshToken: String,
-    },
+    sightToken: String,
+    googleId: String,
+    googleAccessToken: String,
+    googleRefreshToken: String,
+    spotifyId: String,
+    spotifyAccessToken: String,
+    spotifyRefreshToken: String,
+    instagramId: String,
+    instagramAccessToken: String,
+    instagramRefreshToken: String,
+  },
   subscriptions: [
     {
       channelId: String,
@@ -47,7 +47,7 @@ const UserSchema = new Schema({
           mediaType: String,
           tags: [String],
         },
-      ]
+      ],
     },
   ],
   focalpoints: [
@@ -66,7 +66,7 @@ const UserSchema = new Schema({
           mediaType: String,
           tags: [String],
         },
-      ]
+      ],
     },
   ],
   pinnedInsights: [
@@ -86,7 +86,7 @@ const UserSchema = new Schema({
     subscriptions: [String],
     source: [String],
     mediaType: [String],
-  }
+  },
 });
 
 module.exports = User = mongoose.model('User', UserSchema);

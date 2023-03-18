@@ -5,7 +5,6 @@ const { default: mongoose } = require('mongoose');
 const insightRouter = require('./insightRoutes.js');
 const focalpointRouter = require('./focalpointRoutes.js');
 
-
 router.use('/:username/focalpoints/:focalpoint_id', insightRouter);
 
 // we can do user/username/focalpoints since there will be no focalpoint_id
@@ -27,10 +26,9 @@ router.put('/:username/update', async (req, res) => {
     );
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
-    else {
+    } else {
       user.isAuthenticated = true;
-      console.log('updated user:', user)
+      console.log('updated user:', user);
       res.status(200).send(user);
     }
   } catch (error) {
@@ -44,7 +42,7 @@ router.get('/:email', async (req, res) => {
   try {
     console.log('req.params.username=', req.params.email);
     //Find the user by username and populate the focalpoints and insights fields
-    const user = await User.findOne({ email: req.params.email  });
+    const user = await User.findOne({ email: req.params.email });
 
     const userObject = { ...user.toObject(), isAuthenticated: true };
     //Send the authenticated user object to the client:
@@ -65,8 +63,7 @@ router.put('/:username', async (req, res) => {
     );
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
-    else {
+    } else {
       res.status(200).send(user);
     }
   } catch (error) {
