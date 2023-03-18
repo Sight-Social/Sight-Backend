@@ -19,6 +19,9 @@ const UserSchema = new Schema({
   avatar: String,
   tokens: [
     {
+      sightToken: String,
+    },
+    {
       googleId: String,
       googleAccessToken: String,
       googleRefreshToken: String,

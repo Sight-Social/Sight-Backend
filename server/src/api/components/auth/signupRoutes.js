@@ -4,6 +4,7 @@ const router = express.Router();
 const User = require('../user/model.js');
 const db = require('../db.js');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 router.post('/:username', async (req, res) => {
   console.log('Got a POST request at /signup/:username');
@@ -53,7 +54,10 @@ router.post('/', async (req, res) => {
         pinned_insights: [],
         filters: [],
     });
-    //3. Send back the newly created user
+    //3. Create a JWT token
+    const sightToken = jwt.sign({ _id: savedUser._id }, process.env.SIGHT_TOKEN_SECRET);
+    savedUser.tokens = savedUser.tokens.unshift({ sightToken });
+    //4. Send back the newly created user
     const userToSend = { ...savedUser.toObject() };
     console.log('userToSend: ', userToSend);
     res.send(userToSend);
