@@ -35,7 +35,18 @@ router.post('/', async (req, res) => {
         email: req.body.email,
         password: hashedPassword,
         avatar: '',
-        tokens: {},
+        tokens: {
+          sightToken: '',
+          googleId: '',
+          googleAccessToken: '',
+          googleRefreshToken: '',
+          spotifyId: '',
+          spotifyAccessToken: '',
+          spotifyRefreshToken: '',
+          instagramId: '',
+          instagramAccessToken: '',
+          instagramRefreshToken: '',
+        },
         subscriptions: [],
         focalpoints: [
           {
@@ -52,19 +63,16 @@ router.post('/', async (req, res) => {
           }
         ],
         pinned_insights: [],
-        filters: [],
+        filters: {},
     });
-    //3. Create a JWT token
+    //3. Create a sightToken JWT for the new user
     const sightToken = jwt.sign({ _id: newUser._id.toString() }, process.env.SIGHT_SECRET);
-    console.log('sightToken: ', sightToken)
-    //4. Add the JWT token to the user's tokens object
-    newUser.tokens.sightToken = sightToken;
-    console.log('newUser: ', newUser)
-    //5. Save the user to the database
-    const savedUser = await newUser.save();
-    //6. Send back the newly created&saved user
-    console.log('userToSend: ', savedUser);
-    res.send(savedUser);
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: newUser._id },
+      { $set: { 'tokens.sightToken': sightToken } },
+      { new: true }
+    );
+    res.send(updatedUser);
   } catch (error) {
     res.status(500).send(`Error posting or fetching newly created user from the database: ${error}`);
   }

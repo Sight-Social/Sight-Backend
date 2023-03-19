@@ -11,13 +11,12 @@ const spotifyRoutes = require('./auth/SpotifyRoutes');
 const userRoutes = require('./user/routes');
 const session = require('express-session');
 
-
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(session({
-  secret: 'sight-secret',
+  secret: 'sight-session-secret',
   resave: false,
   saveUninitialized: false,
 }));

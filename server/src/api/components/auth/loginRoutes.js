@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
     const sightToken = jwt.sign({ _id: foundUser._id }, process.env.SIGHT_SECRET);
     console.log('sightToken: ', sightToken)
     //5. Add the token to the user's tokens array
-    foundUser.tokens = foundUser.tokens.unshift({ sightToken });
+    foundUser.tokens.sightToken = sightToken;
     //6. Return the authenticated user with populated fields
     const user = {
       username: foundUser.username,

@@ -20,7 +20,7 @@ passport.use(new GoogleStrategy({
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/youtube.force-ssl'],
   access_type: 'offline'
-},  async function(req, accessToken, refreshToken, profile, done) {
+}, async function(req, accessToken, refreshToken, profile, done) {
   console.log('profile', profile._json);
   console.log('accessToken', accessToken);
   console.log('refreshToken', refreshToken);
@@ -29,20 +29,22 @@ passport.use(new GoogleStrategy({
     let user = await User.findOneAndUpdate(
       { email: profile.email },
       {
+        $set: {
           avatar: profile._json.picture,
           'tokens.googleId': profile.id,
           'tokens.googleAccessToken': accessToken,
           'tokens.googleRefreshToken': refreshToken
+        }
       },
-      { new: true,
-        upsert: true, }
+      { new: true }
     );  
-    console.log('Step 1: Google USER: ', user);
+    console.log('Google USER: ', user);
     done(null, user);
   } catch (err) {
     return done(err);
   }
-}));  
+}));
+ 
 
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
@@ -65,17 +67,12 @@ router.get('/callback',
   passport.authenticate('google', { failureRedirect: '/signup' }),
   async function(req, res) {
     try {
-      console.log('/callback req.user', req.user.tokens);
       //Get the user's subscriptions from YouTube
       const subscriptions = await getYouTubeSubscriptionList(req.user.tokens.googleAccessToken);
       //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
       const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens.googleAccessToken);
-      console.log('#ofNewCreatorsAdded', newCreatorsAdded);
       //Populate the user's subscriptions with the creator insights
       const updatedUser = await addCreatorInsightsToUserSubscriptions(req.user, subscriptions);
-
-      //Check console to see if it all worked
-      console.log('updatedUser', updatedUser);
 
       //Redirect to spotify registration page
       res.redirect('http://localhost:3001/register/spotify');
@@ -87,7 +84,6 @@ router.get('/callback',
 });
 
 async function getYouTubeSubscriptionList(accessToken){
-  console.log('getSubsList accessToken', accessToken)
   //1. Create new GoogleOAuth2 client using the user's accessToken
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
@@ -104,7 +100,7 @@ async function getYouTubeSubscriptionList(accessToken){
   return subscriptions;
 }
 
-async function saveUserYouTubeSubscriptions(user, subscriptions) {
+/*async function saveUserYouTubeSubscriptions(user, subscriptions) {
   // Find the user in the database
   const foundUser = await User.findOne({ email: user.email });
   if (!foundUser) throw new Error('User not found in database');
@@ -132,7 +128,7 @@ async function saveUserYouTubeSubscriptions(user, subscriptions) {
   const updatedUser = await foundUser.save();
 
   return updatedUser;
-}
+}*/
 
 async function addSubscriptionsToCreatorsCollection(subscriptions, accessToken){
   let count = 0;
@@ -182,8 +178,6 @@ async function addCreatorInsightsToUserSubscriptions(user, subscriptions){
 }
 
 async function getCreatorInsightsFromYouTube(channelId, accessToken){
-  console.log('Creator Insights accessToken', accessToken)
-  console.log('Creator Insights channelId', channelId)
   //1. Create new GoogleOAuth2 client
   const auth = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
