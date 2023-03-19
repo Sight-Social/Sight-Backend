@@ -48,7 +48,7 @@ const UserSchema = new Schema({
           mediaType: String,
           tags: [String],
         },
-      ]
+      ],
     },
   ],
   focalpoints: [
@@ -67,7 +67,7 @@ const UserSchema = new Schema({
           mediaType: String,
           tags: [String],
         },
-      ]
+      ],
     },
   ],
   pinnedInsights: [
@@ -87,7 +87,7 @@ const UserSchema = new Schema({
     subscriptions: [String],
     source: [String],
     mediaType: [String],
-  }
+  },
 });
 
 module.exports = User = mongoose.model('User', UserSchema);
