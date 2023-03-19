@@ -9,7 +9,7 @@ require('dotenv').config();
 
 async function fetchUser(username, password) {
   //Find the user by username and populate the focalpoints and insights fields
-  const user = await User.findOne({ username: username })
+  const user = await User.findOne({ username: username });
   return user;
 }
 
@@ -42,14 +42,20 @@ router.post('/', async (req, res) => {
       return res.status(200).json({ user });
     }*/
     //3. Check if valid password
-    const validPassword = await checkPassword(req.body.password, foundUser.password);
+    const validPassword = await checkPassword(
+      req.body.password,
+      foundUser.password
+    );
     if (!validPassword) {
       return res.status(401).send('Invalid password');
     }
 
     //4. Create a JWT token
-    const sightToken = jwt.sign({ _id: foundUser._id }, process.env.SIGHT_SECRET);
-    console.log('sightToken: ', sightToken)
+    const sightToken = jwt.sign(
+      { _id: foundUser._id },
+      process.env.SIGHT_SECRET
+    );
+    console.log('sightToken: ', sightToken);
     //5. Add the token to the user's tokens array
     foundUser.tokens.sightToken = sightToken;
     //6. Return the authenticated user with populated fields
@@ -62,14 +68,13 @@ router.post('/', async (req, res) => {
       focalpoints: foundUser.focalpoints,
       pinnedInsights: foundUser.pinnedInsights,
       filters: foundUser.filters,
-    }
-    console.log('userToSend: ', user)
+    };
+    console.log('userToSend: ', user);
     return res.status(200).json({ user });
   } catch (error) {
     console.log('Error: ', error);
     return res.status(400).send(error.message);
   }
 });
-
 
 module.exports = router;

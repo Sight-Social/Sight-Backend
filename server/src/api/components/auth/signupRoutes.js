@@ -25,56 +25,70 @@ router.post('/', async (req, res) => {
       return res.status(400).send('User already exists');
     }
   } catch (error) {
-    res.send(`Error searching for an existing user from the database: ${error}`);
+    res.send(
+      `Error searching for an existing user from the database: ${error}`
+    );
   }
   //2. If user doesn't exist, create a new User
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const newUser = await User.create({
-        username: req.body.username,
-        email: req.body.email,
-        password: hashedPassword,
-        avatar: '',
-        tokens: {
-          sightToken: '',
-          googleId: '',
-          googleAccessToken: '',
-          googleRefreshToken: '',
-          spotifyId: '',
-          spotifyAccessToken: '',
-          spotifyRefreshToken: '',
-          instagramId: '',
-          instagramAccessToken: '',
-          instagramRefreshToken: '',
+      username: req.body.username,
+      email: req.body.email,
+      password: hashedPassword,
+      avatar: '',
+      tokens: {
+        sightToken: '',
+        googleId: '',
+        googleAccessToken: '',
+        googleRefreshToken: '',
+        spotifyId: '',
+        spotifyAccessToken: '',
+        spotifyRefreshToken: '',
+        instagramId: '',
+        instagramAccessToken: '',
+        instagramRefreshToken: '',
+      },
+      subscriptions: [],
+      focalpoints: [
+        {
+          title: 'Focalpoint 1',
+          description:
+            'This is a default focalpoint, delete it and add your own!',
+          insights: [],
+          filters: [],
         },
-        subscriptions: [],
-        focalpoints: [
-          {
-            title: 'Focalpoint 1',
-            description: 'This is a default focalpoint, delete it and add your own!',
-            insights: [],
-            filters: [],
-          },
-          {
-            title: 'Focalpoint 2',
-            description: 'This is a default focalpoint, delete it and add your own!',
-            insights: [],
-            filters: [],
-          }
-        ],
-        pinned_insights: [],
-        filters: {},
+        {
+          title: 'Focalpoint 2',
+          description:
+            'This is a default focalpoint, delete it and add your own!',
+          insights: [],
+          filters: [],
+        },
+      ],
+      pinned_insights: [],
+      filters: {},
     });
-    //3. Create a sightToken JWT for the new user
-    const sightToken = jwt.sign({ _id: newUser._id.toString() }, process.env.SIGHT_SECRET);
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: newUser._id },
-      { $set: { 'tokens.sightToken': sightToken } },
-      { new: true }
+    //3. Create a JWT token
+    const sightToken = jwt.sign(
+      { _id: newUser._id.toString() },
+      process.env.SIGHT_SECRET
     );
-    res.send(updatedUser);
+    console.log('sightToken: ', sightToken);
+    //4. Add the JWT token to the user's tokens object
+    newUser.tokens.sightToken = sightToken;
+    console.log('newUser: ', newUser);
+    //5. Save the user to the database
+    const savedUser = await newUser.save();
+    //6. Send back the newly created&saved user
+    console.log('userToSend: ', savedUser);
+    res.send(savedUser);
   } catch (error) {
-    res.status(500).send(`Error posting or fetching newly created user from the database: ${error}`);
+    res
+      .status(500)
+      .send(
+        `Error posting or fetching newly created user from the database: ${error}`
+      );
   }
 });
 
