@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('./model.js');
 const { default: mongoose } = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 /* ADD A FOCAL POINT */
 router.post('/', async (req, res) => {
@@ -63,14 +64,19 @@ router.patch('/', async (req, res) => {
   console.log('Params: ', req.params);
   console.log('BODY: ', req.body);
 
-  const { email, focalpointToEdit, editedName, editedDescription } = req.body;
+  const { token, focalpointToEdit, editedName, editedDescription } = req.body;
 
   try {
+    const decoded = jwt.verify(token, process.env.SIGHT_SECRET);
+    const user = await User.findOne({
+      _id: mongoose.Types.ObjectId(decoded._id),
+    });
+
     /* FIND the user with the provided username and their populate focalpoints  */
-    const user = await User.findOne({ email: email });
+    /* const user = await User.findOne({ email: email });
     if (!user) {
       return res.status(404).send({ message: 'User not found' });
-    }
+    } */
     /* console.log('!!! ', user); */
     /* FIND the focal point in the user's focalpoints array with the provided _id */
     const focalpointIndex = user.focalpoints.findIndex(

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('./model.js');
 const { default: mongoose } = require('mongoose');
 const { ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 
 /* ADD AN INSIGHT */
 router.post('/', async (req, res) => {
@@ -10,8 +11,12 @@ router.post('/', async (req, res) => {
   console.log('[POST] Got a request at /user/focalpoints/:focalpointId/');
   console.log('req.body=', req.body);
   try {
+    const decoded = jwt.verify(req.body.token, process.env.SIGHT_SECRET);
+    const user = await User.findOne({
+      _id: mongoose.Types.ObjectId(decoded._id),
+    });
+
     //1. Find the user in the database
-    const user = await User.findOne({ username: req.body.username });
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
@@ -21,31 +26,31 @@ router.post('/', async (req, res) => {
     console.log('focalpointId=', focalpointId);
     console.log('insight=', insight);
 
-    
     //2. Find the index of the focalpoint in the user's focalpoints array
-    const focalpointIndex = user.focalpoints.findIndex(fp => fp._id.toString() === focalpointId);
+    const focalpointIndex = user.focalpoints.findIndex(
+      (fp) => fp._id.toString() === focalpointId
+    );
     if (focalpointIndex === -1) {
       console.log('Focalpoint not found');
       return res.status(404).json({ error: 'Focalpoint not found' });
     }
     console.log('focalpoint found at index: ', focalpointIndex);
-    
+
     //3. Update the User's specific focalpoint's insights array with the new insight
     user.focalpoints[focalpointIndex].insights.push(insight);
-    console.log('found focalpoint and added insight')
-    
+    console.log('found focalpoint and added insight');
+
     //4. Save the updated user document and return the new insight
     await user.save();
-    console.log('saved user document')
-    console.log('returning new insight: ', insight)
-    
+    console.log('saved user document');
+    console.log('returning new insight: ', insight);
+
     //5. Return the new insight
-    return res.json(insight);
+    return res.status(201).json(insight);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Server error' });
   }
-  
 
   /* Find a user and add a focal point with their _id as the author or that focal point */
   /*console.log('User: ', req.body.username);
@@ -76,10 +81,12 @@ router.post('/', async (req, res) => {
 /* DELETE AN INSIGHT */
 router.delete('/', async (req, res) => {
   console.log('----------------------------------------');
-  console.log('[DELETE] Got a request at /user/:username/focalpoints/:focalpointId');
+  console.log(
+    '[DELETE] Got a request at /user/:username/focalpoints/:focalpointId'
+  );
 
-     const user_id = req.query.author_id;
-     const fp_id = req.query.selected_id;
+  const user_id = req.query.author_id;
+  const fp_id = req.query.selected_id;
   //   const username = req.params.username;
 
   //   try {
@@ -108,6 +115,5 @@ router.delete('/', async (req, res) => {
   //     res.status(500).send({ message: 'Server error' });
   //   }
 });
-
 
 module.exports = router;
