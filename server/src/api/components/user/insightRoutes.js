@@ -5,6 +5,7 @@ const { default: mongoose } = require('mongoose');
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
+
 /* ADD AN INSIGHT */
 router.post('/', async (req, res) => {
   console.log('----------------------------------------');
@@ -115,5 +116,8 @@ router.delete('/', async (req, res) => {
   //     res.status(500).send({ message: 'Server error' });
   //   }
 });
+
+
+
 
 module.exports = router;
