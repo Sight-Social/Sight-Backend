@@ -55,44 +55,34 @@ router.delete('/', authSight, async (req, res) => {
     '[DELETE] Got a request at /user/:username/focalpoints/:focalpointId'
   );
 
-  console.log('req.body1:', req.body);
-  const {focalpointId, insight} = req.body;
+  console.log('req.body:', req.body);
   const user = req.user;
+  const focalpointId = req.body.focalpointId;
+  const insightToDelete = req.body.insight;
+  const insightIdToDelete = insightToDelete._id;
 
   try {
-    /* Find the focalpoint that has the focalpoint id */
-    const focalpoint = user.focalpoints.find(
-      (fp) => fp._id.toString() === focalpointId
-    );
-
-    /* Remove the insight with the insight._id from the focalpoint's insights array */
-    console.log('insights: ', focalpoint.insights);
-    console.log('insight: ', insight._id);
-
-    console.log('insight._id.toString()', insight._id.toString())
-    const matchingInsight = focalpoint.insights.find(
-      (ins) => ins._id.toString() === insight._id.toString()
-    );
-    if (!matchingInsight) {
-      console.log('Matching insight not found');
-      return res.status(404).json({ error: 'Matching insight not found' });
+    // Find the focalpoint that has the focalpoint id
+    const focalpoint = user.focalpoints.find(fp => fp._id.toString() === focalpointId);
+    if (!focalpoint) {
+      return res.status(404).json({ error: 'Focalpoint not found' });
     }
 
-    const insightIndex = focalpoint.insights.findIndex(
-      (ins) => ins._id.toString() === insight._id
-    );
     // Find the matching insight object within the focalpoint's insights array
-    if (insightIndex === -1) {
-      console.log('Insight not found');
+    const matchingInsight = focalpoint.insights.find(insight => insight._id.toString() === insightToDelete._id);
+    if (!matchingInsight) {
       return res.status(404).json({ error: 'Insight not found' });
     }
-    focalpoint.insights.splice(insightIndex, 1);
-    /* Save the updated user document */
-    await user.save();
-    
 
-    /* Send the updated user document as response */
-    res.status(201).json(matchingInsight);
+    // Remove the matching insight object from the focalpoint's insights array
+    const insightIndex = focalpoint.insights.findIndex(insight => insight._id.toString() === req.body.insight._id);
+    focalpoint.insights.splice(insightIndex, 1);
+
+    // Save the updated user document
+    await user.save();
+
+    // Send the insight and focalpoint id back to the client
+    res.status(201).json({insight: matchingInsight, focalpointId: focalpoint._id});
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: 'Server error' });

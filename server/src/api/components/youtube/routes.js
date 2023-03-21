@@ -10,6 +10,7 @@ const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const { google } = require('googleapis');
 const jwt = require('jsonwebtoken');
 const { default: mongoose } = require('mongoose');
+const authSight = require('../auth/authSight.js');
 
 
 //HELPER FUNCTIONS
@@ -53,25 +54,14 @@ async function getRelatedVideosFromYouTube(videoId, accessToken){
     return videos
 }
 
-router.post('/related', async (req, res) => {
+router.post('/related', authSight, async (req, res) => {
     console.log('[POST] Got a request at /youtube/related');
-    console.log('req.body=', req.body);
     try {
-      const decoded = jwt.verify(req.body.sightToken, process.env.SIGHT_SECRET);
-      const user = await User.findOne({
-        _id: mongoose.Types.ObjectId(decoded._id),
-      });
-  
-      //1. Find the user in the database
-      if (!user) {
-        console.log('User not found');
-        return res.status(404).json({ error: 'User not found' });
-      }
       const videoId = req.body.videoId;
-      //2. Now call YouTube API to get related videos
-      const relatedVideos = await getRelatedVideosFromYouTube(req.body.videoId, user.tokens.googleAccessToken);
-      console.log('relatedVideos=', relatedVideos);
-      //3. Send back array of related videos
+      // Now call YouTube API to get related videos
+      const relatedVideos = await getRelatedVideosFromYouTube(req.body.videoId, req.user.tokens.googleAccessToken);
+      // Send back array of related videos
+      console.log('YouTube API call successful, sending relatedVideos back...')
       return res.status(200).json(relatedVideos);
    } catch (error) {
       console.error(error);
