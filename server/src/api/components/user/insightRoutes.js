@@ -5,7 +5,6 @@ const { default: mongoose } = require('mongoose');
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
-
 /* ADD AN INSIGHT */
 router.post('/', async (req, res) => {
   console.log('----------------------------------------');
@@ -52,31 +51,6 @@ router.post('/', async (req, res) => {
     console.error(error);
     return res.status(500).json({ error: 'Server error' });
   }
-
-  /* Find a user and add a focal point with their _id as the author or that focal point */
-  /*console.log('User: ', req.body.username);
-  const user = await User.findOne({ username: req.body.username });
-  console.log('User: ', user);
-  // Create a new insight object to add to the user's collection
-  let newFocalPoint = new FocalPoint({
-    author: user._id,
-    name: req.body.name,
-    description: req.body.description,
-  }); */
-
-  // Save the new insight to the database and associate it with the user's `focalpoints` array
-  /*  await newFocalPoint.save(function (err, fp) {
-    if (err) return console.error(err);
-    console.log(fp.name + ' saved to focalpoints collection.');
-  }); */
-
-  /* Add the new focal point to the user's focal point array */
-  /* await User.updateOne(
-    { _id: user._id },
-    { $push: { focalpoints: newFocalPoint._id } }
-  );
-  console.log('Added focal point to user');
-  res.send('[200] Added Focal Point'); */
 });
 
 /* DELETE AN INSIGHT */
@@ -86,38 +60,49 @@ router.delete('/', async (req, res) => {
     '[DELETE] Got a request at /user/:username/focalpoints/:focalpointId'
   );
 
-  const user_id = req.query.author_id;
-  const fp_id = req.query.selected_id;
-  //   const username = req.params.username;
+  const { insight, focalpointid, token } = req.headers;
 
-  //   try {
-  //     /* Find the user with the provided username */
-  //     const user = await User.findOne({ username });
-  //     if (!user) {
-  //       return res.status(404).send({ message: 'User not found' });
-  //     }
-  //     console.log('here');
+  try {
+    /* Find the user with the provided username */
+    const decoded = jwt.verify(token, process.env.SIGHT_SECRET);
+    const user = await User.findOne({
+      _id: mongoose.Types.ObjectId(decoded._id),
+    });
 
-  //     /* Remove the focal point from their focalpoints array with the id matching fp_id */
-  //     user.focalpoints.pull(fp_id);
-  //     await user.save();
+    //1. Find the user in the database
+    if (!user) {
+      console.log('User not found');
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-  //     /* Find the focal point using the fp_id in the focal points model and delete that document as well */
-  //     const deletedFocalPoint = await FocalPoint.findByIdAndDelete(fp_id);
-  //     if (!deletedFocalPoint) {
-  //       return res.status(404).send({ message: 'Focal point not found' });
-  //     }
+    /* Find the focalpoint that has the focalpoint id */
+    const focalpoint = user.focalpoints.find(
+      (fp) => fp._id.toString() === focalpointid
+    );
 
-  //     res.status(200).send({
-  //       message: `Focal point with ID ${fp_id} deleted successfully`,
-  //     });
-  //   } catch (err) {
-  //     console.error(err);
-  //     res.status(500).send({ message: 'Server error' });
-  //   }
+    /* Remove the insight with the insight._id from the focalpoint's insights array */
+    console.log('ghere: ', focalpoint.insights);
+    console.log('insight: ', insight);
+    const insightIndex = focalpoint.insights.findIndex(
+      (ins) => ins._id.toString() === insight
+    );
+
+    if (insightIndex === -1) {
+      console.log('Insight not found');
+      return res.status(404).json({ error: 'Insight not found' });
+    }
+    focalpoint.insights.splice(insightIndex, 1);
+
+    /* Save the updated user document */
+    await user.save();
+    console.log('UpdateUser: ', user);
+
+    /* Send the updated user document as response */
+    res.status(201).json(insight);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Server error' });
+  }
 });
-
-
-
 
 module.exports = router;
