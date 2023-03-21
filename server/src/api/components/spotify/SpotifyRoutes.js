@@ -3,12 +3,13 @@ const axios = require('axios');
 const passport = require('passport');
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
 const User = require('../user/model');
 const Creator = require('../creators/model.js');
 const jwtDecode = require('jwt-decode');
 const SpotifyStrategy = require('passport-spotify').Strategy;
+const refreshSpotifyAccessToken = require('../auth/authSpotify');
 
+//Passport Strategy
 passport.use(
   new SpotifyStrategy(
     {
@@ -34,13 +35,12 @@ passport.use(
   )
 );
 
-router.get(
-  '/',
-  passport.authenticate('spotify', {
+
+//Signup Routes
+router.get('/', passport.authenticate('spotify', {
     scope: ['user-read-email', 'user-read-private', 'user-library-read'],
   })
 );
-
 router.get(
   '/callback',
   passport.authenticate('spotify', { failureRedirect: '/login' }),
@@ -67,6 +67,9 @@ router.get(
   }
 );
 
+
+
+//Spotify API calls and helpers
 async function getSpotifyShows(accessToken) {
   //1. Make req to Spotify API to get user's shows
   const response = await axios.get(
@@ -77,7 +80,6 @@ async function getSpotifyShows(accessToken) {
   //3. Return the shows
   return shows;
 }
-
 async function addShowsToCreatorsCollection(shows, accessToken) {
   let count = 0;
   //Loop through the user's subscriptions
@@ -107,7 +109,6 @@ async function addShowsToCreatorsCollection(shows, accessToken) {
   }
   return count;
 }
-
 async function getCreatorInsightsFromSpotify(showId, accessToken) {
   //Make req to get media for each subscription
   const response = await axios.get(

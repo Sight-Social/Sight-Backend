@@ -4,24 +4,16 @@ const User = require('./model.js');
 const { default: mongoose } = require('mongoose');
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const authSight = require('../auth/authSight');
 
 
 /* ADD AN INSIGHT */
-router.post('/', async (req, res) => {
+router.post('/', authSight, async (req, res) => {
   console.log('----------------------------------------');
   console.log('[POST] Got a request at /user/focalpoints/:focalpointId/');
   console.log('req.body=', req.body);
-  try {
-    const decoded = jwt.verify(req.body.token, process.env.SIGHT_SECRET);
-    const user = await User.findOne({
-      _id: mongoose.Types.ObjectId(decoded._id),
-    });
-
-    //1. Find the user in the database
-    if (!user) {
-      console.log('User not found');
-      return res.status(404).json({ error: 'User not found' });
-    }
+    try {
+    const user = req.user;
     const focalpointId = req.body.focalpointId;
     const insight = req.body.insight;
     console.log('focalpointId=', focalpointId);
@@ -80,7 +72,7 @@ router.post('/', async (req, res) => {
 });
 
 /* DELETE AN INSIGHT */
-router.delete('/', async (req, res) => {
+router.delete('/', authSight, async (req, res) => {
   console.log('----------------------------------------');
   console.log(
     '[DELETE] Got a request at /user/:username/focalpoints/:focalpointId'

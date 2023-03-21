@@ -3,19 +3,16 @@ const router = express.Router();
 const User = require('./model.js');
 const { default: mongoose } = require('mongoose');
 const jwt = require('jsonwebtoken');
+const authSight = require('../auth/authSight');
 
 /* ADD A FOCAL POINT */
-router.post('/', async (req, res) => {
+router.post('/', authSight, async (req, res) => {
   try {
     console.log('----------------------------------------');
     // user/:username/focalpoints
     console.log('[POST] Got a request at /user/:username/focalpoints');
 
-    /* Find a user and add a focal point with their _id as the author or that focal point */
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const user = req.user;
 
     const newFocalPoint = {
       title: req.body.title,
@@ -25,6 +22,7 @@ router.post('/', async (req, res) => {
 
     user.focalpoints.push(newFocalPoint);
     await user.save();
+    console.log('Successfully added new focal point:', newFocalPoint)
     return res.status(201).json(newFocalPoint);
   } catch (err) {
     console.error(err);
@@ -58,27 +56,14 @@ router.delete('/', async (req, res) => {
 });
 
 /* EDIT A FOCAL POINT -> /:username/focalpoints */
-router.patch('/', async (req, res) => {
+router.patch('/', authSight, async (req, res) => {
   console.log('----------------------------------------');
   console.log('[PATCH] Got a request at /user/:username/focalpoints');
-  console.log('Params: ', req.params);
-  console.log('BODY: ', req.body);
 
-  const { token, focalpointToEdit, editedName, editedDescription } = req.body;
+  const user = req.user;
+  const { focalpointToEdit, editedName, editedDescription } = req.body;
 
   try {
-    const decoded = jwt.verify(token, process.env.SIGHT_SECRET);
-    const user = await User.findOne({
-      _id: mongoose.Types.ObjectId(decoded._id),
-    });
-
-    /* FIND the user with the provided username and their populate focalpoints  */
-    /* const user = await User.findOne({ email: email });
-    if (!user) {
-      return res.status(404).send({ message: 'User not found' });
-    } */
-    /* console.log('!!! ', user); */
-    /* FIND the focal point in the user's focalpoints array with the provided _id */
     const focalpointIndex = user.focalpoints.findIndex(
       (focalpoint) => focalpoint._id.toString() === focalpointToEdit.toString()
     );

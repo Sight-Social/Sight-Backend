@@ -8,7 +8,7 @@ const loginRoutes = require('./auth/loginRoutes');
 const signupRoutes = require('./auth/signupRoutes');
 const googleRoutes = require('./auth/GoogleRoutes');
 const youtubeRoutes = require('./youtube/routes');
-const spotifyRoutes = require('./auth/SpotifyRoutes');
+const spotifyRoutes = require('./spotify/SpotifyRoutes');
 const userRoutes = require('./user/routes');
 const session = require('express-session');
 
