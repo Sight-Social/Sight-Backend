@@ -23,7 +23,11 @@ router.post('/', authSight, async (req, res) => {
     user.focalpoints.push(newFocalPoint);
     await user.save();
     console.log('Successfully added new focal point:', newFocalPoint)
-    return res.status(201).json(newFocalPoint);
+
+    /* Grab most recently added focal point from db and return it */
+    const dbNewFocalPoint = user.focalpoints[user.focalpoints.length-1]
+    
+    return res.status(201).json(dbNewFocalPoint);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
