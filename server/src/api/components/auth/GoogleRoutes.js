@@ -5,10 +5,12 @@ const router = express.Router();
 const db = require('../db');
 const User = require('../user/model');
 const Creator = require('../creators/model.js');
-const { OAuth2Client } = require('google-auth-library');
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const { google } = require('googleapis');
-const jwtDecode = require('jwt-decode');
+const { getYouTubeSubscriptionList,
+  addSubscriptionsToCreatorsCollection,
+  getCreatorInsightsFromYouTube,
+  addCreatorInsightsToUserSubscriptions } = require('../youtube/youtubeMiddleware');
 
 //Passport Google OAuth2.0 Strategy
 passport.use(new GoogleStrategy({
@@ -38,7 +40,6 @@ passport.use(new GoogleStrategy({
       },
       { new: true }
     );  
-    console.log('Google USER: ', user);
     done(null, user);
   } catch (err) {
     return done(err);
@@ -69,11 +70,13 @@ router.get('/callback',
     try {
       //Get the user's subscriptions from YouTube
       const subscriptions = await getYouTubeSubscriptionList(req.user.tokens.googleAccessToken);
+      console.log('#ofSubscriptions: ', subscriptions.length)
       //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
       const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens.googleAccessToken);
+      console.log('#ofNewCreatorsAdded: ', newCreatorsAdded);
       //Populate the user's subscriptions with the creator insights
       const updatedUser = await addCreatorInsightsToUserSubscriptions(req.user, subscriptions);
-
+      
       //Redirect to spotify registration page
       res.redirect('http://localhost:3001/register/spotify');
 
@@ -83,141 +86,5 @@ router.get('/callback',
     }
 });
 
-async function getYouTubeSubscriptionList(accessToken){
-  //1. Create new GoogleOAuth2 client using the user's accessToken
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
-  //2. Create a YouTube API client
-  const youtube = google.youtube({ version: 'v3', auth: auth });
-  //3. Get the user's subscriptions
-  const response = await youtube.subscriptions.list({
-    part: ['snippet', 'id'],
-    mine: true,
-    maxResults: 50
-    });
-  //4. Extract the subscription items from the response
-  const subscriptions = response.data.items;
-  return subscriptions;
-}
 
-/*async function saveUserYouTubeSubscriptions(user, subscriptions) {
-  // Find the user in the database
-  const foundUser = await User.findOne({ email: user.email });
-  if (!foundUser) throw new Error('User not found in database');
-  // Loop through the YouTube subscriptions, checking if it's already in the user's subscriptions array
-  for (const subscription of subscriptions) {
-    const subscriptionExists = foundUser.subscriptions.some((sub) => sub.channelId === subscription.snippet.channelId);
-
-    if (!subscriptionExists) {
-      // Create a new subscription object
-      const newSubscription = {
-        channelId: subscription.snippet.channelId,       //YouTube's channel ID
-        channelName: subscription.snippet.title,                          //channel name
-        channelDescription: subscription.snippet.description.slice(0, 100), // Only take the first 100 characters
-        channelAvatar: subscription.snippet.thumbnails.default.url,        // channel avatar
-        insights: [],                                                     // insights array
-      };
-      const newCreatorInsights = await getCreatorInsightsFromYouTube(subscription.snippet.channelId, user.accessToken);  //returns an array of Insight objects
-      // Add the new insights to the subscription object
-      newSubscription.insights = newCreatorInsights;
-      // Push the new subscription to the user's subscriptions array
-      foundUser.subscriptions.push(newSubscription);
-    }
-  }
-  // Save the updated user to the database
-  const updatedUser = await foundUser.save();
-
-  return updatedUser;
-}*/
-
-async function addSubscriptionsToCreatorsCollection(subscriptions, accessToken){
-  let count = 0;
-  //Loop through the user's subscriptions
-  for (const subscription of subscriptions) {
-    //Check if the subscription is already in the 'creators' collection
-    const foundCreator = await Creator.findOne({ channelId: subscription.snippet.resourceId.channelId });
-    //add to Creator collection if not found
-    const newCreatorChannelIds = [];
-    if (!foundCreator) {
-      console.log('New creator found, fetching their insights from YouTube...')
-      const newCreatorInsights = await getCreatorInsightsFromYouTube(subscription.snippet.resourceId.channelId, accessToken);  //returns an array of Insight objects
-      const newCreator = new Creator({
-        channelId: subscription.snippet.resourceId.channelId,
-        channelName: subscription.snippet.title,
-        channelDescription: subscription.snippet.description,
-        channelAvatar: subscription.snippet.thumbnails.default.url,
-        lastUpdated: Date.now(),
-        insights: newCreatorInsights,
-      });
-    await newCreator.save();
-    count++;
-    }
-  }
-  return count;
-}
-
-async function addCreatorInsightsToUserSubscriptions(user, subscriptions){
-  //Loop through the user's subscriptions
-  for (const subscription of subscriptions) {
-    //Find the subscription in the 'creators' collection
-    const foundCreator = await Creator.findOne({ channelId: subscription.snippet.resourceId.channelId });
-    //Add the creator's insights to the user's subscription
-    if (foundCreator) {
-      user.subscriptions.push({
-        channelId: foundCreator.channelId,
-        channelName: foundCreator.channelName,
-        channelDescription: foundCreator.channelDescription,
-        channelAvatar: foundCreator.channelAvatar,
-        insights: foundCreator.insights,
-        })
-    }
-  }
-  //Save the updated user to the database
-  const updatedUser = await user.save();
-  return updatedUser;
-}
-
-async function getCreatorInsightsFromYouTube(channelId, accessToken){
-  //1. Create new GoogleOAuth2 client
-  const auth = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI,
-    ['https://www.googleapis.com/auth/youtube.readonly',
-    'https://www.googleapis.com/auth/youtube.force-ssl']
-  );
-  auth.setCredentials({ access_token: accessToken });
-  //2. Create a YouTube API client
-  const youtube = google.youtube({ version: 'v3', auth: auth });
-  //3. Get the Creator's 50 most recent videos
-  const response = await youtube.search.list({
-    part: "snippet",
-    channelId: channelId,
-    maxResults: 50,
-    order: 'date',
-    type: 'video'
-  })
-  //4. Extract the video items from the response
-  const videos = []
-  //5. Loop through the videos and get the videoId
-  for (const item of response.data.items) {
-    if (item.id.kind === 'youtube#channel' || item.id.kind === 'youtube#playlist') continue;
-    else {
-    let video = {
-        videoId: item.id.videoId,
-        channelId: item.snippet.channelId,
-        title: item.snippet.title,
-        description: item.snippet.description.slice(0, 100),
-        publishedAt: item.snippet.publishedAt,
-        thumbnail: item.snippet.thumbnails.medium.url,
-        source: 'YouTube',
-        mediaType: 'video',
-        tags: item.snippet.tags,
-        };
-      videos.push(video);
-    }
-  }
-  return videos
-}
-
-module.exports = router;
+module.exports = router;  

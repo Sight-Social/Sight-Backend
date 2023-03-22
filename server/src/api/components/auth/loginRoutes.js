@@ -5,9 +5,13 @@ const User = require('../user/model.js');
 const db = require('../db.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { refreshSpotifyAccessToken } = require('./authSpotify.js');
-const { refreshGoogleAccessToken } = require('./authGoogle.js');
 require('dotenv').config();
+const { 
+  getYouTubeSubscriptionList,
+  addSubscriptionsToCreatorsCollection,
+  getCreatorInsightsFromYouTube,
+  addCreatorInsightsToUserSubscriptions 
+  } = require('../youtube/youtubeMiddleware');
 
 
 async function fetchUser(username, password) {
@@ -26,6 +30,21 @@ async function checkPassword(password, hashedPassword) {
   return true;
 }
 
+
+
+//1. Find user in MongoDB
+//2. Check if valid password
+//3. Create a sightToken JWT token
+//4. Add or update the token to the user's tokens array
+//5. Make YoutubeAPI call to refresh the user's:
+    //1. access_token
+    //2. subscriptions  (and subscriptions[i].insights)   -- Refresh Creator insights     -- If Creator not found, add them to Creators, populate their insights
+//6. Make SpotifyAPI call to refresh the user's:
+    //1. access_token
+    //2. shows (and subscriptions[i].insights))           -- Refresh Creator insights      -- If Creator not found, add them to Creators, populate their insights
+//7. Save the user
+//8. Return the authenticated user with populated fields
+
 router.post('/', async (req, res) => {
   console.log('Got a POST request at /login');
   try {
@@ -39,7 +58,6 @@ router.post('/', async (req, res) => {
     if (!validPassword) {
       return res.status(401).send('Invalid password');
     }
-
     //3. Create a JWT token
     const sightToken = jwt.sign(
       { _id: foundUser._id },
@@ -47,24 +65,26 @@ router.post('/', async (req, res) => {
     );
     //4. Add or update the token to the user's tokens array
     foundUser.tokens.sightToken = sightToken;
-    //5. Check the other tokens and update the expired ones
-    //const checkedSpotifyUser = await authSpotify(foundUser, foundUser.tokens.spotifyToken);
-    //const checkedGoogleUser = await authGoogle(foundUser, foundUser.tokens.googleToken);
-    //6. Save the user
     await foundUser.save();
-    //await checkedGoogleUser.save();
-
-    //7. Return the authenticated user with populated fields
+    //5. Make YoutubeAPI call to refresh the user's access_token and subscriptions
+      //subscriptions
+      const youtubeSubscriptions = await getYouTubeSubscriptionList(foundUser.tokens.googleAccessToken);
+      console.log('#ofYouTubeSubscriptions: ', youtubeSubscriptions.length);
+      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(youtubeSubscriptions, foundUser.tokens.googleAccessToken);
+      console.log('#ofNewCreatorsAdded: ', newCreatorsAdded);
+      const updatedUser = await addCreatorInsightsToUserSubscriptions(foundUser, youtubeSubscriptions);
+    //6. Return the authenticated user with populated fields
     const user = {
-      username: foundUser.username,
-      email: foundUser.email,
-      avatar: foundUser.avatar,
-      tokens: foundUser.tokens,
-      subscriptions: foundUser.subscriptions,
-      focalpoints: foundUser.focalpoints,
-      pinnedInsights: foundUser.pinnedInsights,
-      filters: foundUser.filters,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      avatar: updatedUser.avatar,
+      tokens: updatedUser.tokens,
+      subscriptions: updatedUser.subscriptions,
+      focalpoints: updatedUser.focalpoints,
+      pinnedInsights: updatedUser.pinnedInsights,
+      filters: updatedUser.filters,
     };
+    console.log('Sending back updated user...')
     return res.status(200).json({ user });
   } catch (error) {
     console.log('Error: ', error);

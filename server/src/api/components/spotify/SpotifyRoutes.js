@@ -47,18 +47,19 @@ router.get(
   async function (req, res) {
     //Get the user's saved shows from Spotify
     const shows = await getSpotifyShows(req.user.tokens.spotifyAccessToken);
+    console.log('#ofShows:', shows.length);
     //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
     const newCreatorsAdded = await addShowsToCreatorsCollection(
       shows,
       req.user.tokens.spotifyAccessToken
     );
-    console.log('#ofNewCreatorsAdded', newCreatorsAdded);
+    console.log('#ofNewCreatorsAddedFromSpotify', newCreatorsAdded);
     //Populate the user's subscriptions with the creator insights
     const updatedUser = await addCreatorInsightsToUserSubscriptions(
       req.user,
       shows
     );
-    console.log('Successfully added creator insights to user subscriptions');
+    console.log('Successfully added Spotify Creator insights to user subscriptions');
     console.log('Sending back fresh user object to frontend...');
     //Successful authentication, redirect home.
     /* updatedUser.isAuthenticated = true;

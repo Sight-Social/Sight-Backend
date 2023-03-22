@@ -74,14 +74,11 @@ router.post('/', async (req, res) => {
       { _id: newUser._id.toString() },
       process.env.SIGHT_SECRET
     );
-    console.log('sightToken: ', sightToken);
     //4. Add the JWT token to the user's tokens object
     newUser.tokens.sightToken = sightToken;
-    console.log('newUser: ', newUser);
     //5. Save the user to the database
     const savedUser = await newUser.save();
     //6. Send back the newly created&saved user
-    console.log('userToSend: ', savedUser);
     res.send(savedUser);
   } catch (error) {
     res
