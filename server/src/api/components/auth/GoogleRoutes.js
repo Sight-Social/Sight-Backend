@@ -73,10 +73,9 @@ router.get('/callback',
       console.log('#ofSubscriptions: ', subscriptions.length)
       //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
       const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens.googleAccessToken);
-      console.log('#ofNewCreatorsAdded: ', newCreatorsAdded);
       //Populate the user's subscriptions with the creator insights
       const updatedUser = await addCreatorInsightsToUserSubscriptions(req.user, subscriptions);
-      
+      console.log('YouTube signup complete');
       //Redirect to spotify registration page
       res.redirect('http://localhost:3001/register/spotify');
 

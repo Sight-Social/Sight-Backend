@@ -31,7 +31,8 @@ async function getYouTubeSubscriptionList(accessToken){
 }
 
 async function addSubscriptionsToCreatorsCollection(subscriptions, accessToken){
-  let count = 0;
+  let newCreatorCount = 0;
+  let updatedCreatorCount = 0;
   //Loop through the user's subscriptions
   for (const subscription of subscriptions) {
     //Check if the subscription is already in the 'creators' collection
@@ -51,7 +52,7 @@ async function addSubscriptionsToCreatorsCollection(subscriptions, accessToken){
         insights: newCreatorInsights,
       });
       await newCreator.save();
-      count++;
+      newCreatorCount++;
     }
     else {
         //If the Creator is found, simply update their insights if the lastUpdated() is not recent
@@ -66,13 +67,16 @@ async function addSubscriptionsToCreatorsCollection(subscriptions, accessToken){
             foundCreator.insights = updatedCreatorInsights;
             foundCreator.lastUpdated = Date.now();
             await foundCreator.save();
+            updatedCreatorCount++;
         }
         else {
             console.log('Creator already exists and is up to date, skipping...');
         }
     }
   }
-  return count;
+  console.log(`#of New Creators: ${newCreatorCount}`);
+  console.log(`#of Updated Creators: ${updatedCreatorCount}`);
+  return newCreatorCount;
 }
 
 async function getCreatorInsightsFromYouTube(channelId, accessToken){
@@ -120,21 +124,44 @@ async function getCreatorInsightsFromYouTube(channelId, accessToken){
 
 async function addCreatorInsightsToUserSubscriptions(user, subscriptions){
   //Loop through the user's subscriptions
-  for (const subscription of subscriptions) {
-    //Find the subscription in the 'creators' collection
-    const foundCreator = await Creator.findOne({ channelId: subscription.snippet.resourceId.channelId });
-    //Add the creator's insights to the user's subscription
-    if (foundCreator) {
-      user.subscriptions.push({
-        channelId: foundCreator.channelId,
-        channelName: foundCreator.channelName,
-        channelDescription: foundCreator.channelDescription,
-        channelAvatar: foundCreator.channelAvatar,
-        insights: foundCreator.insights,
-        })
+  if (user.subscriptions.length === 0){
+    console.log('Adding subscriptions to the new user...')
+    
+    for (let i = 0; i < subscriptions.length; i++) {
+      const subscription = subscriptions[i];
+      //Find the subscription in the 'creators' collection
+      const foundCreator = await Creator.findOne({ channelId: subscription.snippet.resourceId.channelId }); 
+      
+      if (foundCreator) {
+        //Signup: Add the subscription to user, add insights to user.subscription
+        user.subscriptions.push({
+            channelId: foundCreator.channelId,
+            channelName: foundCreator.channelName,
+            channelDescription: foundCreator.channelDescription,
+            channelAvatar: foundCreator.channelAvatar,
+            insights: foundCreator.insights,
+        });
+      }
+    }
+  }
+  else {
+    console.log("Updating the existing user's subscription's insights...")
+    for (let i = 0; i < subscriptions.length; i++) {
+      const subscription = subscriptions[i];
+      //Find the subscription in the 'creators' collection
+      const foundCreator = await Creator.findOne({ channelId: subscription.snippet.resourceId.channelId });
+      if (foundCreator) {
+        //Login: Add insights to user.subscription
+        //Find the subscription in the user's subscriptions
+        const foundUserSubscription = user.subscriptions.find(subscription => subscription.channelId === foundCreator.channelId);
+        if (foundUserSubscription) {
+          foundUserSubscription.insights = foundCreator.insights;
+        }
+      }
     }
   }
   //Save the updated user to the database
+  console.log('Saving the new or updated user to the database...')
   const updatedUser = await user.save();
   return updatedUser;
 }
