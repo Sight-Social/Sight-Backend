@@ -19,6 +19,7 @@ const authSight = async (req, res, next) => {
     req.user = user;
     //Pass to the next middleware or function in the route
     /* console.log('AUTHSIGHT: ', req.body) */
+    console.log('[authSight.js]: User authorized')
     next();
   } catch (error) {
     res.status(401).send({ error: '[authSight.js]: User not authorized' });

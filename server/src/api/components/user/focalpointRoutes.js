@@ -47,6 +47,7 @@ router.delete('/', authSight, async (req, res) => {
     /* Remove the focal point from their focalpoints array */
     user.focalpoints.pull(req.body.focalpoint);
     await user.save();
+    console.log('Successfully removed focal point, sending back 201 & the deleted focal point..');
     res.status(201).json(req.body.focalpoint);
   } catch (err) {
     console.error(err);
@@ -74,8 +75,7 @@ router.patch('/', authSight, async (req, res) => {
     user.focalpoints[focalpointIndex].title = editedName;
     user.focalpoints[focalpointIndex].description = editedDescription;
     await user.save();
-    console.log('updatedUser:', user);
-
+    console.log('Successfully updated focal point, sending back 200 & the updated user..')
     return res.status(200).send(user);
   } catch (err) {
     console.error(err);
