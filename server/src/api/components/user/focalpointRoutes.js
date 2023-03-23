@@ -8,8 +8,8 @@ const authSight = require('../auth/authSight');
 /* ADD A FOCAL POINT */
 router.post('/', authSight, async (req, res) => {
   try {
-    console.log('----------------------------------------');
     // user/:username/focalpoints
+    console.log('----------------------------------------');
     console.log('[POST] Got a request at /user/:username/focalpoints');
 
     const user = req.user;
@@ -35,24 +35,19 @@ router.post('/', authSight, async (req, res) => {
 });
 
 /* DELETE A FOCAL POINT */
-router.delete('/', async (req, res) => {
+router.delete('/', authSight, async (req, res) => {
   // user/:username/focalpoints/:focalpoint_id
   console.log('----------------------------------------');
   console.log('[DELETE] Got a request at /user/:username/focalpoints');
   console.log('----------------------------------------');
-  console.log('Params: ', req.query);
 
   try {
-    const user = await User.findOne({ email: req.query.email });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    /* Remove the focal point from their focalpoints array with the id matching fp_id */
-    user.focalpoints.pull(req.query.selected_id);
+    const user = req.user;
+    console.log(req.body.focalpoint)
+    /* Remove the focal point from their focalpoints array */
+    user.focalpoints.pull(req.body.focalpoint);
     await user.save();
-    res.status(200).send({
-      message: `Focal point with ID ${req.query.selected_id} deleted successfully`,
-    });
+    res.status(201).json(req.body.focalpoint);
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: 'Server error' });
