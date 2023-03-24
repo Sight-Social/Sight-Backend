@@ -55,6 +55,7 @@ const UserSchema = new Schema({
     {
       title: String,
       description: String,
+      imageUrl: String,
       filters: [String],
       insights: [
         {

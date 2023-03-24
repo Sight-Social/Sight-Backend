@@ -57,6 +57,7 @@ router.post('/', async (req, res) => {
             'This is a default focalpoint, delete it and add your own!',
           insights: [],
           filters: [],
+          imageUrl: '',
         },
         {
           title: 'Focalpoint 2',
@@ -64,6 +65,7 @@ router.post('/', async (req, res) => {
             'This is a default focalpoint, delete it and add your own!',
           insights: [],
           filters: [],
+          imageUrl: '',
         },
       ],
       pinned_insights: [],

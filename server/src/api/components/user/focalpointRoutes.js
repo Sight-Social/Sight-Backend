@@ -18,6 +18,7 @@ router.post('/', authSight, async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       insights: [],
+      imageUrl: '',
     };
 
     user.focalpoints.push(newFocalPoint);
@@ -77,6 +78,28 @@ router.patch('/', authSight, async (req, res) => {
     await user.save();
     console.log('Successfully updated focal point, sending back 200 & the updated user..')
     return res.status(200).send(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+/* EDIT A FOCAL POINT -> /:username/focalpoints */
+router.patch('/image', authSight, async (req, res) => {
+  console.log('----------------------------------------');
+  console.log('[PATCH] Got a request at /user/:username/focalpoints/image');
+
+  const user = req.user;
+  const { imageUrl, focalpointIndex } = req.body;
+  console.log('imageUrl:', imageUrl);
+  console.log('focalpointIndex:', focalpointIndex);
+  try {
+    /* UPDATE the focal point's image url */
+    user.focalpoints[focalpointIndex].imageUrl = imageUrl;
+    await user.save();
+    /* console.log('updatedUser:', user); */
+
+    return res.status(201).send(imageUrl);
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: 'Internal Server Error' });
