@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('./model.js');
 const { default: mongoose } = require('mongoose');
 const jwt = require('jsonwebtoken');
-const authSight = require('../auth/authSight');
+const authSight = require('../auth/authSight.js');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 
@@ -125,9 +125,9 @@ router.patch('/image', authSight, upload.single('file'), async (req, res) => {
   });
 
   const response = await s3Client.send(command);
-  console.log('RESPONSE:', response);
   const url = `https://${S3_BUCKET}.s3.amazonaws.com/${key}`;
-  console.log('Image URl:', url);
+  /*   console.log('RESPONSE:', response); */
+  /* console.log('Image URl:', url); */
 
   try {
     /* UPDATE the focal point's image url */
