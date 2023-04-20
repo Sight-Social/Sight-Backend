@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/api/components/server.js",
   "scripts": {
-    "start": "nodemon /src/api/components/server.js",
+    "start-prod": "node /src/api/components/server.js",
+    "start-dev": "nodemon /src/api/components/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -31,6 +32,6 @@
     "passport-youtube-v3": "^2.1.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "nodemon": "^2.0.22"
   }
 }
