@@ -35,9 +35,10 @@ passport.use(
   )
 );
 
-
 //Signup Routes
-router.get('/', passport.authenticate('spotify', {
+router.get(
+  '/',
+  passport.authenticate('spotify', {
     scope: ['user-read-email', 'user-read-private', 'user-library-read'],
   })
 );
@@ -59,16 +60,16 @@ router.get(
       req.user,
       shows
     );
-    console.log('Successfully added Spotify Creator insights to user subscriptions');
+    console.log(
+      'Successfully added Spotify Creator insights to user subscriptions'
+    );
     console.log('Sending back fresh user object to frontend...');
     //Successful authentication, redirect home.
     /* updatedUser.isAuthenticated = true;
     res.status(200).json(updatedUser); */
-    res.redirect(`http://localhost:3001/login`);
+    res.redirect(`${process.env.FRONTEND_API_URL}/login`);
   }
 );
-
-
 
 //Spotify API calls and helpers
 async function getSpotifyShows(accessToken) {

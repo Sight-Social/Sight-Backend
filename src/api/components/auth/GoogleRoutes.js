@@ -7,45 +7,55 @@ const User = require('../user/model');
 const Creator = require('../creators/model.js');
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const { google } = require('googleapis');
-const { getYouTubeSubscriptionList,
+const {
+  getYouTubeSubscriptionList,
   addSubscriptionsToCreatorsCollection,
   getCreatorInsightsFromYouTube,
-  addCreatorInsightsToUserSubscriptions } = require('../youtube/youtubeMiddleware');
+  addCreatorInsightsToUserSubscriptions,
+} = require('../youtube/youtubeMiddleware');
 
 //Passport Google OAuth2.0 Strategy
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: process.env.GOOGLE_REDIRECT_URI,
-  passReqToCallback: true,
-  scope: ['profile', 'email', 'https://www.googleapis.com/auth/youtube',
-    'https://www.googleapis.com/auth/youtube.readonly',
-    'https://www.googleapis.com/auth/youtube.force-ssl'],
-  access_type: 'offline'
-}, async function(req, accessToken, refreshToken, profile, done) {
-  console.log('profile', profile._json);
-  console.log('accessToken', accessToken);
-  console.log('refreshToken', refreshToken);
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_REDIRECT_URI,
+      passReqToCallback: true,
+      scope: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/youtube',
+        'https://www.googleapis.com/auth/youtube.readonly',
+        'https://www.googleapis.com/auth/youtube.force-ssl',
+      ],
+      access_type: 'offline',
+    },
+    async function (req, accessToken, refreshToken, profile, done) {
+      console.log('profile', profile._json);
+      console.log('accessToken', accessToken);
+      console.log('refreshToken', refreshToken);
 
-  try {
-    let user = await User.findOneAndUpdate(
-      { email: profile.email },
-      {
-        $set: {
-          avatar: profile._json.picture,
-          'tokens.googleId': profile.id,
-          'tokens.googleAccessToken': accessToken,
-          'tokens.googleRefreshToken': refreshToken
-        }
-      },
-      { new: true }
-    );  
-    done(null, user);
-  } catch (err) {
-    return done(err);
-  }
-}));
- 
+      try {
+        let user = await User.findOneAndUpdate(
+          { email: profile.email },
+          {
+            $set: {
+              avatar: profile._json.picture,
+              'tokens.googleId': profile.id,
+              'tokens.googleAccessToken': accessToken,
+              'tokens.googleRefreshToken': refreshToken,
+            },
+          },
+          { new: true }
+        );
+        done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    }
+  )
+);
 
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
@@ -59,31 +69,40 @@ passport.deserializeUser(function (user, cb) {
 });
 
 //Define Google authentication route
-router.get('/',
-  passport.authenticate('google', { scope: passport._strategies.google._scope})
+router.get(
+  '/',
+  passport.authenticate('google', { scope: passport._strategies.google._scope })
 );
 
 //Define Google authentication callback route
-router.get('/callback',
+router.get(
+  '/callback',
   passport.authenticate('google', { failureRedirect: '/signup' }),
-  async function(req, res) {
+  async function (req, res) {
     try {
       //Get the user's subscriptions from YouTube
-      const subscriptions = await getYouTubeSubscriptionList(req.user.tokens.googleAccessToken);
-      console.log('#ofSubscriptions: ', subscriptions.length)
+      const subscriptions = await getYouTubeSubscriptionList(
+        req.user.tokens.googleAccessToken
+      );
+      console.log('#ofSubscriptions: ', subscriptions.length);
       //Check if one of the user's subscriptions is NOT in the 'creators' collection, add it if it's not
-      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(subscriptions, req.user.tokens.googleAccessToken);
+      const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(
+        subscriptions,
+        req.user.tokens.googleAccessToken
+      );
       //Populate the user's subscriptions with the creator insights
-      const updatedUser = await addCreatorInsightsToUserSubscriptions(req.user, subscriptions);
+      const updatedUser = await addCreatorInsightsToUserSubscriptions(
+        req.user,
+        subscriptions
+      );
       console.log('YouTube signup complete');
       //Redirect to spotify registration page
-      res.redirect('http://localhost:3001/register/spotify');
-
+      res.redirect(`${process.env.FRONTEND_API_URL}/register/spotify`);
     } catch (error) {
       console.log(error);
       res.status(500).send('Failed to save YouTube info');
     }
-});
+  }
+);
 
-
-module.exports = router;  
+module.exports = router;
