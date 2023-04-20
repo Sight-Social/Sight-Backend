@@ -7,12 +7,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 router.post('/:username', async (req, res) => {
-  console.log('Got a POST request at /signup/:username');
+  /* console.log('Got a POST request at /signup/:username'); */
   console.log('req.params: ', req.params);
 });
 
 router.post('/', async (req, res) => {
-  console.log('Got a POST request at /signup');
+  /* console.log('Got a POST request at /signup'); */
   console.log('req.body: ', req.body);
   //1. Check if user already exists
   try {
