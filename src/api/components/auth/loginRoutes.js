@@ -67,13 +67,13 @@ router.post('/', async (req, res) => {
     foundUser.tokens.sightToken = sightToken;
     console.log('Created new sightToken, saving to User in DB...')
     await foundUser.save();
-    //5. Make YoutubeAPI call to refresh the user's access_token and subscriptions
+  /*  //5. Make YoutubeAPI call to refresh the user's access_token and subscriptions
       //subscriptions
       const youtubeSubscriptions = await getYouTubeSubscriptionList(foundUser.tokens.googleAccessToken);
       console.log('#ofYouTubeSubscriptions: ', youtubeSubscriptions.length);
       const newCreatorsAdded = await addSubscriptionsToCreatorsCollection(youtubeSubscriptions, foundUser.tokens.googleAccessToken);
       const updatedUser = await addCreatorInsightsToUserSubscriptions(foundUser, youtubeSubscriptions);
-      console.log('YouTube subscription update complete.')
+      console.log('YouTube subscription update complete.') */
     //6. Return the authenticated user with populated fields
     const user = {
       username: updatedUser.username,
