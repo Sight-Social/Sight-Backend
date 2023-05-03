@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
     //4. Add or update the token to the user's tokens array
     foundUser.tokens.sightToken = sightToken;
     console.log('Created new sightToken, saving to User in DB...')
-    await foundUser.save();
+    const updatedUser = await foundUser.save();
   /*  //5. Make YoutubeAPI call to refresh the user's access_token and subscriptions
       //subscriptions
       const youtubeSubscriptions = await getYouTubeSubscriptionList(foundUser.tokens.googleAccessToken);
